@@ -48,7 +48,7 @@ public class PulsarKeeperServer extends AbstractVerticle {
 
     private void loadV1ClusterEndpoint(Router router) {
         /**
-         * @api {get} /v1/cluster List of cluster
+         * @api {get} /api/v1/cluster List of cluster
          * @apiName List of cluster
          * @apiGroup Cluster
          *
