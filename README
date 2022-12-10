@@ -3,7 +3,7 @@ PulsarKeeper
 
 This directory contains the source code distribution of the PulsarKeeper.
 
-PulsarKeeper is an advanced Apache Pulsar management and diagnostic tool.
+PulsarKeeper is an advanced Apache Pulsar management and diagnostic plugin.
 Based on the high performance Vert.x and fully asynchronous implementation, it is fully compatible with pulsar admin.
 
 Quick start:
