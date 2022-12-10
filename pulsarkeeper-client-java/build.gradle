@@ -1,4 +1,6 @@
 dependencies {
+    apiElements("org.apache.pulsar:pulsar-common:2.10.2")
     implementation "io.vertx:vertx-web-client:4.3.5"
+    implementation("org.apache.pulsar:pulsar-common:2.10.2")
     implementation(project(":pulsarkeeper-common"))
 }

@@ -1,6 +1,10 @@
 package io.github.pulsarkeeper.server;
 
+import io.github.pulsarkeeper.server.handler.AuthenticationHandler;
+import io.github.pulsarkeeper.server.handler.AuthorizationHandler;
 import io.github.pulsarkeeper.server.handler.ClusterHandler;
+import io.github.pulsarkeeper.server.handler.impl.AuthenticationDisabledHandler;
+import io.github.pulsarkeeper.server.handler.impl.AuthorizationDisabledHandler;
 import io.github.pulsarkeeper.server.handler.impl.ClusterHandlerImpl;
 import io.github.pulsarkeeper.server.options.PulsarKeeperServerOptions;
 import io.github.pulsarkeeper.server.resources.ClusterResourcesDelegator;
@@ -10,6 +14,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.BodyHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pulsar.broker.resources.PulsarResources;
 import org.apache.pulsar.broker.service.BrokerService;
@@ -19,6 +24,8 @@ public class PulsarKeeperServer extends AbstractVerticle {
     private final BrokerService brokerService;
     private final PulsarKeeperServerOptions options;
     private ClusterHandler clusterHandler;
+    private AuthorizationHandler authorizationHandler;
+    private AuthenticationHandler authenticationHandler;
 
     public PulsarKeeperServer(BrokerService brokerService) {
         this.brokerService = brokerService;
@@ -32,12 +39,17 @@ public class PulsarKeeperServer extends AbstractVerticle {
         this.clusterHandler = new ClusterHandlerImpl(
                 new ClusterResourcesDelegator(pulsarResources.getClusterResources(), vertx.nettyEventLoopGroup())
         );
+        this.authorizationHandler = new AuthorizationDisabledHandler();
+        this.authenticationHandler = new AuthenticationDisabledHandler();
     }
 
     @Override
     public void start(Promise<Void> promise) {
         HttpServer server = vertx.createHttpServer();
         Router router = Router.router(vertx);
+        router.route()
+                .handler(BodyHandler.create())
+                .handler(authenticationHandler::handle);
         loadV1ClusterEndpoint(router);
         loadPulsarAdminClusterEndpoint(router);
         server.requestHandler(router)
@@ -47,29 +59,28 @@ public class PulsarKeeperServer extends AbstractVerticle {
     }
 
     private void loadV1ClusterEndpoint(Router router) {
-        /**
-         * @api {get} /api/v1/cluster List of cluster
-         * @apiName List of cluster
-         * @apiGroup Cluster
-         *
-         * @apiHeaderExample {json} Request-Headers:
-         *                  {
-         *                      "Content-Type": "application/json"
-         *                      "Accept": "application/json"
-         *                  }
-         * @apiSuccess {String[]} - List of cluster.
-         * @apiSuccessExample {json} Success-Response:
-         *     HTTP/1.1 200 OK
-         *     [
-         *       "cluster1"
-         *       "cluster2"
-         *     ]
-         * @apiPermission none
-         * @apiVersion 1.0.0
-         */
-        router.get("/api/v1/cluster").handler(clusterHandler::list);
+        router.get("/api/v1/cluster")
+                .handler(authorizationHandler::superUserPermission)
+                .handler(clusterHandler::list);
+        router.get("/api/v1/cluster/:name")
+                .handler(authorizationHandler::superUserPermission)
+                .handler(clusterHandler::get);
+        router.post("/api/v1/cluster/:name")
+                .handler(authorizationHandler::superUserPermission)
+                .handler(clusterHandler::create);
+        router.patch("/api/v1/cluster/:name")
+                .handler(authorizationHandler::superUserPermission)
+                .handler(clusterHandler::update);
+        router.delete("/api/v1/cluster/:name")
+                .handler(authorizationHandler::superUserPermission)
+                .handler(clusterHandler::delete);
     }
+
     private void loadPulsarAdminClusterEndpoint(Router router) {
         router.get("/admin/v2/clusters").handler(clusterHandler::list);
+        router.get("/admin/v2/clusters/:name").handler(clusterHandler::get);
+        router.put("/admin/v2/clusters/:name").handler(clusterHandler::create);
+        router.post("/admin/v2/clusters/:name").handler(clusterHandler::update);
+        router.delete("/admin/v2/clusters/:name").handler(clusterHandler::delete);
     }
 }

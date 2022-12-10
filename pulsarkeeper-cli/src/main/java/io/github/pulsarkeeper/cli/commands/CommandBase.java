@@ -1,6 +1,8 @@
 package io.github.pulsarkeeper.cli.commands;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import de.gesundkrank.fzf4j.Fzf;
+import de.gesundkrank.fzf4j.models.OrderBy;
 import io.github.pulsarkeeper.client.PulsarKeeper;
 import io.github.pulsarkeeper.client.options.PulsarKeeperOptions;
 import io.github.pulsarkeeper.common.json.ObjectMapperFactory;
@@ -8,6 +10,11 @@ import io.github.pulsarkeeper.common.json.ObjectMapperFactory;
 public abstract class CommandBase implements Command {
 
     protected PulsarKeeperOptions cnx;
+    protected final Fzf fzf = Fzf.builder()
+            .reverse()
+            .orderBy(OrderBy.SCORE)
+            .normalize()
+            .build();
 
     @Override
     public void loadCnx(PulsarKeeperOptions loadCnx) {

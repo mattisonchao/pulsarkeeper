@@ -1,2 +1,4 @@
 dependencies {
+    apiElements("org.springframework:spring-beans:5.3.24")
+    implementation 'org.springframework:spring-beans:5.3.24'
 }
