@@ -1,0 +1,41 @@
+
+subprojects {
+    apply plugin: "java"
+    apply plugin: "checkstyle"
+
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        var log4jVerison = "2.15.0"
+        var jacksonVersion = "2.14.0"
+        implementation("io.vertx:vertx-core:4.3.5")
+        compileOnly 'org.projectlombok:lombok:1.18.24'
+        annotationProcessor 'org.projectlombok:lombok:1.18.24'
+        testCompileOnly 'org.projectlombok:lombok:1.18.24'
+        testAnnotationProcessor 'org.projectlombok:lombok:1.18.24'
+        implementation 'com.google.guava:guava:31.1-jre'
+        implementation "org.apache.logging.log4j:log4j-api:$log4jVerison"
+        implementation "org.apache.logging.log4j:log4j-core:$log4jVerison"
+        implementation "org.apache.logging.log4j:log4j-slf4j-impl:$log4jVerison"
+        implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+        implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:$jacksonVersion"
+        implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion"
+        implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jacksonVersion"
+        testImplementation "org.testng:testng:7.5"
+        testImplementation "org.awaitility:awaitility:4.2.0"
+        testImplementation "org.mockito:mockito-core:3.+"
+    }
+
+    test {
+        useTestNG()
+    }
+
+    checkstyle {
+        toolVersion = "8.37"
+    }
+}

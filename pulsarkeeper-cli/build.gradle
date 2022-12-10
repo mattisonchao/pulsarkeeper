@@ -1,0 +1,20 @@
+apply plugin: 'application'
+
+dependencies {
+    implementation('de.gesundkrank.fzf4j:fzf4j:0.2.0')
+    implementation('com.beust:jcommander:1.82')
+    implementation(project(":pulsarkeeper-client-java"))
+    implementation(project(":pulsarkeeper-common"))
+}
+
+application {
+    applicationName = "pulsarkeeper"
+    mainClassName = "io.github.pulsarkeeper.cli.Cli"
+}
+
+distributions {
+    main {
+        distributionBaseName.set("pulsarkeeper")
+        archivesBaseName = "pulsarkeeper"
+    }
+}

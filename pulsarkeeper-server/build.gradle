@@ -1,0 +1,11 @@
+plugins {
+    id "io.github.lhotari.gradle-nar-plugin" version "0.5.1"
+}
+
+dependencies {
+    implementation("org.apache.pulsar:pulsar-broker:2.10.2")
+    implementation("io.vertx:vertx-web:4.3.5")
+    implementation(project(":pulsarkeeper-common"))
+    implementation(project(":pulsarkeeper-client-java"))
+    testImplementation("org.apache.pulsar:testmocks:2.10.2")
+}

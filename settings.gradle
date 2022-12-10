@@ -1,0 +1,8 @@
+rootProject.name = "pulsarkeeper"
+include(
+        "pulsarkeeper-common",
+        "pulsarkeeper-server",
+        "pulsarkeeper-client-java",
+        "pulsarkeeper-cli",
+        "pulsarkeeper-dashboard",
+)

@@ -1,0 +1,4 @@
+dependencies {
+    implementation "io.vertx:vertx-web-client:4.3.5"
+    implementation(project(":pulsarkeeper-common"))
+}
