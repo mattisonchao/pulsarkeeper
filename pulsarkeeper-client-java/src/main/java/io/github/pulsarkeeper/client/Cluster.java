@@ -3,6 +3,7 @@ package io.github.pulsarkeeper.client;
 
 import static io.github.pulsarkeeper.common.json.ObjectMapperFactory.getThreadLocal;
 import com.fasterxml.jackson.core.type.TypeReference;
+import io.github.pulsarkeeper.client.exception.PulsarKeeperClusterException;
 import io.github.pulsarkeeper.client.exception.PulsarKeeperException;
 import io.github.pulsarkeeper.client.options.PulsarKeeperOptions;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -49,11 +50,18 @@ public class Cluster {
         client.get(options.getPort(), options.getHost(), "/api/v1/cluster/" + clusterName)
                 .send()
                 .onSuccess(event -> {
-                    if (event.statusCode() != HttpResponseStatus.OK.code()) {
-                        throw new PulsarKeeperException.UnexpectedHttpCodeException(
-                                HttpResponseStatus.OK.code(), event.statusCode());
+                    switch (event.statusCode()) {
+                        case 200:
+                            future.complete(event.bodyAsJson(ClusterDataImpl.class));
+                            break;
+                        case 404:
+                            future.completeExceptionally(
+                                    new PulsarKeeperClusterException.ClusterNotFoundException(clusterName));
+                            break;
+                        default:
+                            future.completeExceptionally(new PulsarKeeperException.UnexpectedHttpCodeException(
+                                    HttpResponseStatus.OK.code(), event.statusCode()));
                     }
-                    future.complete(event.bodyAsJson(ClusterDataImpl.class));
                 }).onFailure(future::completeExceptionally);
         return future;
     }
@@ -63,11 +71,27 @@ public class Cluster {
         client.post(options.getPort(), options.getHost(), "/api/v1/cluster/" + clusterName)
                 .sendJson(clusterData)
                 .onSuccess(event -> {
-                    if (event.statusCode() != HttpResponseStatus.CREATED.code()) {
-                        throw new PulsarKeeperException.UnexpectedHttpCodeException(
-                                HttpResponseStatus.CREATED.code(), event.statusCode());
+                    switch (event.statusCode()) {
+                        case 201:
+                            future.complete(event.bodyAsJson(ClusterDataImpl.class));
+                            break;
+                        case 400:
+                            future.completeExceptionally(
+                                    new PulsarKeeperClusterException.IllegalClusterNameOrDataException(clusterName,
+                                            clusterData.toString()));
+                            break;
+                        case 422:
+                            future.completeExceptionally(
+                                    new PulsarKeeperClusterException.ClusterDuplicatedException(clusterName));
+                            break;
+                        case 409:
+                            future.completeExceptionally(
+                                    new PulsarKeeperException.OperationConflictException("CREATE CLUSTER"));
+                            break;
+                        default:
+                            future.completeExceptionally(new PulsarKeeperException.UnexpectedHttpCodeException(
+                                    HttpResponseStatus.OK.code(), event.statusCode()));
                     }
-                    future.complete(event.bodyAsJson(ClusterDataImpl.class));
                 }).onFailure(future::completeExceptionally);
         return future;
     }
@@ -77,11 +101,27 @@ public class Cluster {
         client.patch(options.getPort(), options.getHost(), "/api/v1/cluster/" + clusterName)
                 .sendJson(clusterData)
                 .onSuccess(event -> {
-                    if (event.statusCode() != HttpResponseStatus.OK.code()) {
-                        throw new PulsarKeeperException.UnexpectedHttpCodeException(
-                                HttpResponseStatus.OK.code(), event.statusCode());
+                    switch (event.statusCode()) {
+                        case 200:
+                            future.complete(event.bodyAsJson(ClusterDataImpl.class));
+                            break;
+                        case 400:
+                            future.completeExceptionally(
+                                    new PulsarKeeperClusterException.IllegalClusterNameOrDataException(clusterName,
+                                            clusterData.toString()));
+                            break;
+                        case 404:
+                            future.completeExceptionally(
+                                    new PulsarKeeperClusterException.ClusterNotFoundException(clusterName));
+                            break;
+                        case 409:
+                            future.completeExceptionally(
+                                    new PulsarKeeperException.OperationConflictException("UPDATE CLUSTER"));
+                            break;
+                        default:
+                            future.completeExceptionally(new PulsarKeeperException.UnexpectedHttpCodeException(
+                                    HttpResponseStatus.OK.code(), event.statusCode()));
                     }
-                    future.complete(event.bodyAsJson(ClusterDataImpl.class));
                 }).onFailure(future::completeExceptionally);
         return future;
     }
@@ -91,11 +131,22 @@ public class Cluster {
         client.delete(options.getPort(), options.getHost(), "/api/v1/cluster/" + clusterName)
                 .send()
                 .onSuccess(event -> {
-                    if (event.statusCode() != HttpResponseStatus.NO_CONTENT.code()) {
-                        throw new PulsarKeeperException.UnexpectedHttpCodeException(
-                                HttpResponseStatus.NO_CONTENT.code(), event.statusCode());
+                    switch (event.statusCode()) {
+                        case 204:
+                            future.complete(null);
+                            break;
+                        case 404:
+                            future.completeExceptionally(
+                                    new PulsarKeeperClusterException.ClusterNotFoundException(clusterName));
+                            break;
+                        case 409:
+                            future.completeExceptionally(
+                                    new PulsarKeeperException.OperationConflictException("DELETE CLUSTER"));
+                            break;
+                        default:
+                            future.completeExceptionally(new PulsarKeeperException.UnexpectedHttpCodeException(
+                                    HttpResponseStatus.NO_CONTENT.code(), event.statusCode()));
                     }
-                    future.complete(null);
                 }).onFailure(future::completeExceptionally);
         return future;
     }

@@ -47,7 +47,7 @@ public class PulsarAdminTest extends MockedPulsarServiceBaseTest {
         Assert.assertEquals(clusters.stream().findFirst().get(), CONFIG_CLUSTER_NAME);
     }
 
-    @Test
+    @Test(priority = 1)
     public void curdSuccess() {
         final String clusterName = "example";
         ClusterDataImpl clusterData = ClusterDataImpl.builder()

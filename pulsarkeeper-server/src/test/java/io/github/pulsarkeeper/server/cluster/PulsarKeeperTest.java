@@ -1,9 +1,12 @@
 package io.github.pulsarkeeper.server.cluster;
 
+import io.github.pulsarkeeper.client.Cluster;
 import io.github.pulsarkeeper.client.PulsarKeeper;
+import io.github.pulsarkeeper.client.exception.PulsarKeeperClusterException;
 import io.github.pulsarkeeper.client.options.PulsarKeeperOptions;
 import io.github.pulsarkeeper.server.base.MockedPulsarServiceBaseTest;
 import java.util.Set;
+import java.util.UUID;
 import org.apache.pulsar.common.policies.data.ClusterData;
 import org.apache.pulsar.common.policies.data.ClusterDataImpl;
 import org.testng.Assert;
@@ -46,11 +49,11 @@ public class PulsarKeeperTest extends MockedPulsarServiceBaseTest {
         Assert.assertEquals(clusters.stream().findFirst().get(), CONFIG_CLUSTER_NAME);
     }
 
-    @Test
+    @Test(priority = 1)
     public void curdSuccess() {
         final String clusterName = "example";
         ClusterDataImpl clusterData = ClusterDataImpl.builder()
-                .serviceUrl("pulsar://127.0.0.1:6650")
+                .brokerServiceUrl("pulsar://127.0.0.1:6650")
                 .build();
         pulsarKeeper.getCluster().create(clusterName, clusterData).join();
         ClusterData getClusterData = pulsarKeeper.getCluster().get(clusterName).join();
@@ -60,24 +63,88 @@ public class PulsarKeeperTest extends MockedPulsarServiceBaseTest {
         Assert.assertFalse(clusters.contains(clusterName));
     }
 
-    @Test
+    @Test(priority = 1)
     public void createError() {
+        // Duplicated creation
+        Cluster cluster = pulsarKeeper.getCluster();
+        ClusterDataImpl clusterData = ClusterDataImpl.builder()
+                .brokerServiceUrl("pulsar://127.0.0.1:9999")
+                .build();
+        try {
+            String clusterName = UUID.randomUUID().toString();
+            cluster.create(clusterName, clusterData).join();
+            cluster.create(clusterName, clusterData).join();
+            Assert.fail("Unexpected behaviour");
+        } catch (Throwable ex) {
+            Assert.assertTrue(
+                    ex.getCause() instanceof PulsarKeeperClusterException.ClusterDuplicatedException);
+        }
 
+        // Illegal name or data
+        ClusterDataImpl illegalClusterData = ClusterDataImpl.builder()
+                .serviceUrl("pulsar://127.0.0.1:9999")
+                .build();
+        try {
+            cluster.create(UUID.randomUUID().toString(), illegalClusterData).join();
+            Assert.fail("Unexpected behaviour");
+        } catch (Throwable ex) {
+            Assert.assertTrue(
+                    ex.getCause() instanceof PulsarKeeperClusterException.IllegalClusterNameOrDataException);
+        }
     }
 
-    @Test
+    @Test(priority = 1)
     public void getError() {
-
+        // Not found
+        Cluster cluster = pulsarKeeper.getCluster();
+        try {
+            cluster.get(UUID.randomUUID().toString()).join();
+            Assert.fail("Unexpected behaviour");
+        } catch (Throwable ex) {
+            Assert.assertTrue(
+                    ex.getCause() instanceof PulsarKeeperClusterException.ClusterNotFoundException);
+        }
     }
 
-    @Test
+    @Test(priority = 1)
     public void updateError() {
+        // Not found
+        Cluster cluster = pulsarKeeper.getCluster();
+        ClusterDataImpl clusterData = ClusterDataImpl.builder()
+                .brokerServiceUrl("pulsar://127.0.0.1:9999")
+                .build();
+        try {
+            cluster.update(UUID.randomUUID().toString(), clusterData).join();
+            Assert.fail("Unexpected behaviour");
+        } catch (Throwable ex) {
+            Assert.assertTrue(
+                    ex.getCause() instanceof PulsarKeeperClusterException.ClusterNotFoundException);
+        }
 
+        // Illegal name or data
+        ClusterDataImpl illegalClusterData = ClusterDataImpl.builder()
+                .serviceUrl("pulsar://127.0.0.1:9999")
+                .build();
+        try {
+            cluster.update(UUID.randomUUID().toString(), illegalClusterData).join();
+            Assert.fail("Unexpected behaviour");
+        } catch (Throwable ex) {
+            Assert.assertTrue(
+                    ex.getCause() instanceof PulsarKeeperClusterException.IllegalClusterNameOrDataException);
+        }
     }
 
-    @Test
+    @Test(priority = 1)
     public void deleteError() {
-
+        // Not found
+        Cluster cluster = pulsarKeeper.getCluster();
+        try {
+            cluster.delete(UUID.randomUUID().toString()).join();
+            Assert.fail("Unexpected behaviour");
+        } catch (Throwable ex) {
+            Assert.assertTrue(
+                    ex.getCause() instanceof PulsarKeeperClusterException.ClusterNotFoundException);
+        }
     }
 
 }

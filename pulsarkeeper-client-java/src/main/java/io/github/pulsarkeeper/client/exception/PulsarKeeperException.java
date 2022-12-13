@@ -29,4 +29,10 @@ public class PulsarKeeperException extends RuntimeException {
         }
     }
 
+    public static class OperationConflictException extends PulsarKeeperException {
+        public OperationConflictException(String operation) {
+            super(String.format("operation [%s] conflict with other admin.", operation));
+        }
+    }
+
 }
