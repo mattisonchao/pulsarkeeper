@@ -5,7 +5,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.Parameters;
 import io.github.pulsarkeeper.cli.Args;
-import io.github.pulsarkeeper.client.Cluster;
+import io.github.pulsarkeeper.client.Clusters;
 import io.github.pulsarkeeper.common.json.ObjectMapperFactory;
 import java.util.ArrayList;
 import java.util.Map;
@@ -16,13 +16,13 @@ import org.apache.pulsar.common.policies.data.FailureDomain;
 
 
 @Parameters(commandDescription = "pulsar cluster operation")
-public class CommandCluster extends CommandBase {
+public class CommandClusters extends CommandBase {
 
     @Override
     public void exec(String[] args) {
         Args arg = Args.wrap(args);
         JCommander commander = JCommander.newBuilder()
-                .programName("pulsarkeeper cluster")
+                .programName("pulsarkeeper clusters")
                 .addCommand("list", new List())
                 .addCommand("get", new Get())
                 .addCommand("create", new Create())
@@ -49,7 +49,7 @@ public class CommandCluster extends CommandBase {
 
         @Override
         public void exec() {
-            println(getClient().getCluster().list().join());
+            println(getClient().getClusters().list().join());
         }
     }
 
@@ -62,7 +62,7 @@ public class CommandCluster extends CommandBase {
         @SneakyThrows
         @Override
         public void exec() {
-            Cluster cluster = getClient().getCluster();
+            Clusters cluster = getClient().getClusters();
             if (clusterName == null) {
                 Set<String> clusters = cluster.list().join();
                 String selectedCluster = fzf.select(new ArrayList<>(clusters));
@@ -85,10 +85,10 @@ public class CommandCluster extends CommandBase {
         @SneakyThrows
         @Override
         public void exec() {
-            Cluster cluster = getClient().getCluster();
+            Clusters clusters = getClient().getClusters();
             ClusterDataImpl clusterData = ObjectMapperFactory.getThreadLocal()
                     .readValue(data, ClusterDataImpl.class);
-            println(cluster.create(clusterName, clusterData).join());
+            println(clusters.create(clusterName, clusterData).join());
         }
     }
 
@@ -104,7 +104,7 @@ public class CommandCluster extends CommandBase {
         @SneakyThrows
         @Override
         public void exec() {
-            Cluster cluster = getClient().getCluster();
+            Clusters cluster = getClient().getClusters();
             ClusterDataImpl clusterData = ObjectMapperFactory.getThreadLocal()
                     .readValue(data, ClusterDataImpl.class);
             if (clusterName == null) {
@@ -126,7 +126,7 @@ public class CommandCluster extends CommandBase {
         @SneakyThrows
         @Override
         public void exec() {
-            Cluster cluster = getClient().getCluster();
+            Clusters cluster = getClient().getClusters();
             if (clusterName == null) {
                 Set<String> clusters = cluster.list().join();
                 String selectedCluster = fzf.select(new ArrayList<>(clusters));
@@ -149,7 +149,7 @@ public class CommandCluster extends CommandBase {
         @SneakyThrows
         @Override
         public void exec() {
-            Cluster cluster = getClient().getCluster();
+            Clusters cluster = getClient().getClusters();
             if (clusterName == null) {
                 Set<String> clusters = cluster.list().join();
                 String selectedCluster = fzf.select(new ArrayList<>(clusters));

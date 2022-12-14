@@ -17,11 +17,11 @@ import org.apache.pulsar.common.policies.data.ClusterData;
 import org.apache.pulsar.common.policies.data.ClusterDataImpl;
 import org.apache.pulsar.common.policies.data.FailureDomain;
 
-public class Cluster {
+public class Clusters {
     private final PulsarKeeperOptions options;
     private final WebClient client;
 
-    public Cluster(WebClient client, PulsarKeeperOptions options) {
+    public Clusters(WebClient client, PulsarKeeperOptions options) {
         this.client = client;
         this.options = options;
     }
@@ -29,7 +29,7 @@ public class Cluster {
 
     public CompletableFuture<Set<String>> list() {
         CompletableFuture<Set<String>> future = new CompletableFuture<>();
-        client.get(options.getPort(), options.getHost(), "/api/v1/cluster")
+        client.get(options.getPort(), options.getHost(), "/api/v1/clusters")
                 .send()
                 .onSuccess(event -> {
                     if (event.statusCode() != HttpResponseStatus.OK.code()) {
@@ -50,7 +50,7 @@ public class Cluster {
 
     public CompletableFuture<ClusterData> get(@Nonnull String clusterName) {
         CompletableFuture<ClusterData> future = new CompletableFuture<>();
-        client.get(options.getPort(), options.getHost(), "/api/v1/cluster/" + clusterName)
+        client.get(options.getPort(), options.getHost(), "/api/v1/clusters/" + clusterName)
                 .send()
                 .onSuccess(event -> {
                     switch (event.statusCode()) {
@@ -71,7 +71,7 @@ public class Cluster {
 
     public CompletableFuture<ClusterData> create(@Nonnull String clusterName, @Nonnull ClusterData clusterData) {
         CompletableFuture<ClusterData> future = new CompletableFuture<>();
-        client.post(options.getPort(), options.getHost(), "/api/v1/cluster/" + clusterName)
+        client.post(options.getPort(), options.getHost(), "/api/v1/clusters/" + clusterName)
                 .sendJson(clusterData)
                 .onSuccess(event -> {
                     switch (event.statusCode()) {
@@ -101,7 +101,7 @@ public class Cluster {
 
     public CompletableFuture<ClusterData> update(@Nonnull String clusterName, @Nonnull ClusterData clusterData) {
         CompletableFuture<ClusterData> future = new CompletableFuture<>();
-        client.patch(options.getPort(), options.getHost(), "/api/v1/cluster/" + clusterName)
+        client.patch(options.getPort(), options.getHost(), "/api/v1/clusters/" + clusterName)
                 .sendJson(clusterData)
                 .onSuccess(event -> {
                     switch (event.statusCode()) {
@@ -131,7 +131,7 @@ public class Cluster {
 
     public CompletableFuture<Void> delete(@Nonnull String clusterName) {
         CompletableFuture<Void> future = new CompletableFuture<>();
-        client.delete(options.getPort(), options.getHost(), "/api/v1/cluster/" + clusterName)
+        client.delete(options.getPort(), options.getHost(), "/api/v1/clusters/" + clusterName)
                 .send()
                 .onSuccess(event -> {
                     switch (event.statusCode()) {
@@ -156,7 +156,7 @@ public class Cluster {
 
     public CompletableFuture<Map<String, FailureDomain>> listFailureDomains(@Nonnull String clusterName) {
         CompletableFuture<Map<String, FailureDomain>> future = new CompletableFuture<>();
-        client.get(options.getPort(), options.getHost(), "/api/v1/cluster/" + clusterName + "/domain/failure")
+        client.get(options.getPort(), options.getHost(), "/api/v1/clusters/" + clusterName + "/domains/failure")
                 .send()
                 .onSuccess(event -> {
                     if (event.statusCode() != HttpResponseStatus.OK.code()) {

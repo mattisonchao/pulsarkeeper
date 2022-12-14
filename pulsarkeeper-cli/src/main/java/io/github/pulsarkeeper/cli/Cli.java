@@ -4,7 +4,7 @@ import static java.lang.System.exit;
 import com.beust.jcommander.JCommander;
 import com.google.common.base.Throwables;
 import io.github.pulsarkeeper.cli.commands.Command;
-import io.github.pulsarkeeper.cli.commands.CommandCluster;
+import io.github.pulsarkeeper.cli.commands.CommandClusters;
 import io.github.pulsarkeeper.cli.commands.CommandCtx;
 import io.github.pulsarkeeper.cli.options.PulsarKeeperCliOptions;
 import io.github.pulsarkeeper.cli.options.PulsarKeeperOptionsWrapper;
@@ -28,7 +28,7 @@ public class Cli {
         JCommander commander = JCommander.newBuilder()
                 .programName("pulsarkeeper")
                 .addCommand("ctx", new CommandCtx())
-                .addCommand("cluster", new CommandCluster())
+                .addCommand("clusters", new CommandClusters())
                 .build();
         if (arg.isEmpty()) {
             commander.usage();

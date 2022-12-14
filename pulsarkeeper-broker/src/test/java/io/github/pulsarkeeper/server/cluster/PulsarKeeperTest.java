@@ -1,6 +1,6 @@
 package io.github.pulsarkeeper.server.cluster;
 
-import io.github.pulsarkeeper.client.Cluster;
+import io.github.pulsarkeeper.client.Clusters;
 import io.github.pulsarkeeper.client.PulsarKeeper;
 import io.github.pulsarkeeper.client.exception.PulsarKeeperClusterException;
 import io.github.pulsarkeeper.client.options.PulsarKeeperOptions;
@@ -37,7 +37,7 @@ public class PulsarKeeperTest extends MockedPulsarServiceBaseTest {
 
     @Test
     public void list() {
-        Set<String> clusters = pulsarKeeper.getCluster().list().join();
+        Set<String> clusters = pulsarKeeper.getClusters().list().join();
         Assert.assertEquals(clusters.size(), 1);
         Assert.assertEquals(clusters.stream().findFirst().get(), CONFIG_CLUSTER_NAME);
     }
@@ -48,31 +48,31 @@ public class PulsarKeeperTest extends MockedPulsarServiceBaseTest {
         ClusterDataImpl clusterData = ClusterDataImpl.builder()
                 .brokerServiceUrl("pulsar://127.0.0.1:6650")
                 .build();
-        pulsarKeeper.getCluster().create(clusterName, clusterData).join();
-        ClusterData getClusterData = pulsarKeeper.getCluster().get(clusterName).join();
+        pulsarKeeper.getClusters().create(clusterName, clusterData).join();
+        ClusterData getClusterData = pulsarKeeper.getClusters().get(clusterName).join();
         Assert.assertEquals(getClusterData, clusterData);
         ClusterDataImpl newClusterData = ClusterDataImpl.builder()
                 .brokerServiceUrl("pulsar://127.0.0.1:6651")
                 .build();
-        pulsarKeeper.getCluster().update(clusterName, newClusterData).join();
-        ClusterData getNewClusterData = pulsarKeeper.getCluster().get(clusterName).join();
+        pulsarKeeper.getClusters().update(clusterName, newClusterData).join();
+        ClusterData getNewClusterData = pulsarKeeper.getClusters().get(clusterName).join();
         Assert.assertEquals(getNewClusterData, newClusterData);
-        pulsarKeeper.getCluster().delete(clusterName).join();
-        Set<String> clusters = pulsarKeeper.getCluster().list().join();
+        pulsarKeeper.getClusters().delete(clusterName).join();
+        Set<String> clusters = pulsarKeeper.getClusters().list().join();
         Assert.assertFalse(clusters.contains(clusterName));
     }
 
     @Test(priority = 1)
     public void createError() {
         // Duplicated creation
-        Cluster cluster = pulsarKeeper.getCluster();
+        Clusters clusters = pulsarKeeper.getClusters();
         ClusterDataImpl clusterData = ClusterDataImpl.builder()
                 .brokerServiceUrl("pulsar://127.0.0.1:9999")
                 .build();
         try {
             String clusterName = UUID.randomUUID().toString();
-            cluster.create(clusterName, clusterData).join();
-            cluster.create(clusterName, clusterData).join();
+            clusters.create(clusterName, clusterData).join();
+            clusters.create(clusterName, clusterData).join();
             Assert.fail("Unexpected behaviour");
         } catch (Throwable ex) {
             Assert.assertTrue(
@@ -84,7 +84,7 @@ public class PulsarKeeperTest extends MockedPulsarServiceBaseTest {
                 .serviceUrl("pulsar://127.0.0.1:9999")
                 .build();
         try {
-            cluster.create(UUID.randomUUID().toString(), illegalClusterData).join();
+            clusters.create(UUID.randomUUID().toString(), illegalClusterData).join();
             Assert.fail("Unexpected behaviour");
         } catch (Throwable ex) {
             Assert.assertTrue(
@@ -95,9 +95,9 @@ public class PulsarKeeperTest extends MockedPulsarServiceBaseTest {
     @Test(priority = 1)
     public void getError() {
         // Not found
-        Cluster cluster = pulsarKeeper.getCluster();
+        Clusters clusters = pulsarKeeper.getClusters();
         try {
-            cluster.get(UUID.randomUUID().toString()).join();
+            clusters.get(UUID.randomUUID().toString()).join();
             Assert.fail("Unexpected behaviour");
         } catch (Throwable ex) {
             Assert.assertTrue(
@@ -108,12 +108,12 @@ public class PulsarKeeperTest extends MockedPulsarServiceBaseTest {
     @Test(priority = 1)
     public void updateError() {
         // Not found
-        Cluster cluster = pulsarKeeper.getCluster();
+        Clusters clusters = pulsarKeeper.getClusters();
         ClusterDataImpl clusterData = ClusterDataImpl.builder()
                 .brokerServiceUrl("pulsar://127.0.0.1:9999")
                 .build();
         try {
-            cluster.update(UUID.randomUUID().toString(), clusterData).join();
+            clusters.update(UUID.randomUUID().toString(), clusterData).join();
             Assert.fail("Unexpected behaviour");
         } catch (Throwable ex) {
             Assert.assertTrue(
@@ -125,7 +125,7 @@ public class PulsarKeeperTest extends MockedPulsarServiceBaseTest {
                 .serviceUrl("pulsar://127.0.0.1:9999")
                 .build();
         try {
-            cluster.update(UUID.randomUUID().toString(), illegalClusterData).join();
+            clusters.update(UUID.randomUUID().toString(), illegalClusterData).join();
             Assert.fail("Unexpected behaviour");
         } catch (Throwable ex) {
             Assert.assertTrue(
@@ -136,9 +136,9 @@ public class PulsarKeeperTest extends MockedPulsarServiceBaseTest {
     @Test(priority = 1)
     public void deleteError() {
         // Not found
-        Cluster cluster = pulsarKeeper.getCluster();
+        Clusters clusters = pulsarKeeper.getClusters();
         try {
-            cluster.delete(UUID.randomUUID().toString()).join();
+            clusters.delete(UUID.randomUUID().toString()).join();
             Assert.fail("Unexpected behaviour");
         } catch (Throwable ex) {
             Assert.assertTrue(
@@ -149,7 +149,7 @@ public class PulsarKeeperTest extends MockedPulsarServiceBaseTest {
     @Test(priority = 1)
     public void listFailureDomains() {
         Map<String, FailureDomain> failureDomains =
-                pulsarKeeper.getCluster().listFailureDomains(CONFIG_CLUSTER_NAME).join();
+                pulsarKeeper.getClusters().listFailureDomains(CONFIG_CLUSTER_NAME).join();
         Assert.assertEquals(failureDomains.size(), 0);
     }
 }

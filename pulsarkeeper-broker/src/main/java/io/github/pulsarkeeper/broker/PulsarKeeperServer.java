@@ -62,22 +62,22 @@ public class PulsarKeeperServer extends AbstractVerticle {
     }
 
     private void loadV1ClusterEndpoint(Router router) {
-        router.get("/api/v1/cluster")
+        router.get("/api/v1/clusters")
                 .handler(authorizationHandler::superUserPermission)
                 .handler(clusterHandler::list);
-        router.get("/api/v1/cluster/:name")
+        router.get("/api/v1/clusters/:name")
                 .handler(authorizationHandler::superUserPermission)
                 .handler(clusterHandler::get);
-        router.post("/api/v1/cluster/:name")
+        router.post("/api/v1/clusters/:name")
                 .handler(authorizationHandler::superUserPermission)
                 .handler(clusterHandler::create);
-        router.patch("/api/v1/cluster/:name")
+        router.patch("/api/v1/clusters/:name")
                 .handler(authorizationHandler::superUserPermission)
                 .handler(clusterHandler::update);
-        router.delete("/api/v1/cluster/:name")
+        router.delete("/api/v1/clusters/:name")
                 .handler(authorizationHandler::superUserPermission)
                 .handler(clusterHandler::delete);
-        router.get("/api/v1/cluster/:name/domain/failure")
+        router.get("/api/v1/clusters/:name/domains/failure")
                 .handler(authorizationHandler::superUserPermission)
                 .handler(clusterHandler::listFailureDomain);
     }
