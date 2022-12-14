@@ -7,7 +7,7 @@ import io.github.pulsarkeeper.broker.handler.impl.AuthenticationDisabledHandler;
 import io.github.pulsarkeeper.broker.handler.impl.AuthorizationDisabledHandler;
 import io.github.pulsarkeeper.broker.handler.impl.ClusterHandlerImpl;
 import io.github.pulsarkeeper.broker.options.PulsarKeeperServerOptions;
-import io.github.pulsarkeeper.broker.resources.ClusterResourcesDelegator;
+import io.github.pulsarkeeper.broker.service.impl.ClusterServiceImpl;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.Promise;
@@ -40,7 +40,7 @@ public class PulsarKeeperServer extends AbstractVerticle {
         super.init(vertx, context);
         PulsarResources pulsarResources = brokerService.getPulsar().getPulsarResources();
         this.clusterHandler = new ClusterHandlerImpl(
-                new ClusterResourcesDelegator(pulsarResources.getClusterResources(), vertx.nettyEventLoopGroup())
+                new ClusterServiceImpl(vertx.nettyEventLoopGroup(), pulsarResources.getClusterResources())
         );
         this.authorizationHandler = new AuthorizationDisabledHandler();
         this.authenticationHandler = new AuthenticationDisabledHandler();

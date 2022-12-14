@@ -16,14 +16,12 @@ import static org.apache.pulsar.metadata.api.MetadataStoreException.AlreadyExist
 import static org.apache.pulsar.metadata.api.MetadataStoreException.BadVersionException;
 import static org.apache.pulsar.metadata.api.MetadataStoreException.NotFoundException;
 import io.github.pulsarkeeper.broker.handler.ClusterHandler;
-import io.github.pulsarkeeper.broker.resources.ClusterResourcesDelegator;
+import io.github.pulsarkeeper.broker.service.ClusterService;
 import io.vertx.ext.web.RoutingContext;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 import javax.annotation.concurrent.ThreadSafe;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.pulsar.common.naming.Constants;
 import org.apache.pulsar.common.policies.data.ClusterData;
 import org.apache.pulsar.common.policies.data.ClusterDataImpl;
 
@@ -31,19 +29,15 @@ import org.apache.pulsar.common.policies.data.ClusterDataImpl;
 @Slf4j
 @ThreadSafe
 public class ClusterHandlerImpl implements ClusterHandler {
-    private final ClusterResourcesDelegator clusterResources;
+    private final ClusterService clusterService;
 
-    public ClusterHandlerImpl(ClusterResourcesDelegator clusterResources) {
-        this.clusterResources = clusterResources;
+    public ClusterHandlerImpl(ClusterService clusterService) {
+        this.clusterService = clusterService;
     }
 
     @Override
     public void list(RoutingContext ctx) {
-        clusterResources.listAsync()
-                .thenApply(clusters -> clusters.stream()
-                        // Remove "global" cluster from returned list
-                        .filter(cluster -> !Constants.GLOBAL_CLUSTER.equals(cluster))
-                        .collect(Collectors.toSet()))
+        clusterService.list()
                 .thenAccept(clusters -> ok(ctx, clusters))
                 .exceptionally(ex -> {
                     log.error("[{}][{}] Failed to get list of cluster.", remoteAddress(ctx), role(ctx), ex);
@@ -60,7 +54,7 @@ public class ClusterHandlerImpl implements ClusterHandler {
     @Override
     public void get(RoutingContext ctx) {
         String clusterName = ctx.pathParam("name");
-        clusterResources.getAsync(clusterName)
+        clusterService.get(clusterName)
                 .thenAccept(clusterDataOpt -> {
                     if (clusterDataOpt.isEmpty()) {
                         notFound(ctx);
@@ -84,13 +78,13 @@ public class ClusterHandlerImpl implements ClusterHandler {
             badRequest(ctx);
             return;
         }
-        clusterResources.getAsync(clusterName)
+        clusterService.get(clusterName)
                 .thenCompose(clusterDataOpt -> {
                     if (clusterDataOpt.isPresent()) {
                         unprocessableEntity(ctx);
                         return CompletableFuture.completedFuture(null);
                     }
-                    return clusterResources.createAsync(clusterName, clusterData)
+                    return clusterService.create(clusterName, clusterData)
                             .thenAccept(addedClusterData -> {
                                 log.info("[{}][{}] Created cluster {} with data {}.", remoteAddress(ctx), role(ctx),
                                         clusterName, addedClusterData);
@@ -120,7 +114,7 @@ public class ClusterHandlerImpl implements ClusterHandler {
             badRequest(ctx);
             return;
         }
-        clusterResources.updateAsync(clusterName, clusterData)
+        clusterService.update(clusterName, clusterData)
                 .thenAccept(updatedClusterData -> {
                     log.info("[{}][{}] Updated cluster {} with data {}.", remoteAddress(ctx), role(ctx),
                             clusterName, updatedClusterData);
@@ -144,7 +138,7 @@ public class ClusterHandlerImpl implements ClusterHandler {
     @Override
     public void delete(RoutingContext ctx) {
         String clusterName = ctx.pathParam("name");
-        clusterResources.deleteAsync(clusterName)
+        clusterService.delete(clusterName)
                 .thenAccept(__ -> {
                     log.info("[{}][{}] Deleted cluster {}.", remoteAddress(ctx), role(ctx),
                             clusterName);
