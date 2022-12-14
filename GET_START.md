@@ -2,6 +2,7 @@
 
 <img src="./img/logo.png" alt="图片名称" align=right />
 
+[![codecov](https://codecov.io/github/mattisonchao/pulsarkeeper/branch/2.10.2/graph/badge.svg?token=NR85K5A80M)](https://codecov.io/github/mattisonchao/pulsarkeeper)
 ![JDK 11+](https://img.shields.io/badge/JDK-%2011%2B-orange)
 ![Pulsar](https://img.shields.io/badge/Pulsar-2.10+-blue)
 
