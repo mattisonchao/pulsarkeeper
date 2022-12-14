@@ -1,14 +1,27 @@
+plugins {
+    id 'java'
+    id 'jacoco-report-aggregation'
+}
 
-subprojects {
-    apply plugin: "java"
-    apply plugin: "checkstyle"
-
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-
+allprojects{
     repositories {
         mavenCentral()
     }
+}
+
+dependencies {
+    jacocoAggregation project(":pulsarkeeper-broker")
+    jacocoAggregation project(":pulsarkeeper-client-java")
+    jacocoAggregation project(":pulsarkeeper-common")
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'checkstyle'
+    apply plugin: 'jacoco'
+
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 
     dependencies {
         var log4jVerison = "2.15.0"
@@ -33,9 +46,28 @@ subprojects {
 
     test {
         useTestNG()
+        finalizedBy jacocoTestReport
     }
 
+    jacocoTestReport {
+        reports {
+            xml.enabled true
+            html.enabled false
+        }
+        dependsOn test // tests are required to run before generating the report
+    }
     checkstyle {
         toolVersion = "8.37"
     }
+}
+
+reporting {
+    reports {
+        testCodeCoverageReport(JacocoCoverageReport) {
+            testType = TestSuiteType.UNIT_TEST
+        }
+    }
+}
+tasks.named('check') {
+    dependsOn tasks.named('testCodeCoverageReport', JacocoReport)
 }
