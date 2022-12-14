@@ -49,6 +49,12 @@ public class PulsarKeeperTest extends MockedPulsarServiceBaseTest {
         pulsarKeeper.getCluster().create(clusterName, clusterData).join();
         ClusterData getClusterData = pulsarKeeper.getCluster().get(clusterName).join();
         Assert.assertEquals(getClusterData, clusterData);
+        ClusterDataImpl newClusterData = ClusterDataImpl.builder()
+                .brokerServiceUrl("pulsar://127.0.0.1:6651")
+                .build();
+        pulsarKeeper.getCluster().update(clusterName, newClusterData).join();
+        ClusterData getNewClusterData = pulsarKeeper.getCluster().get(clusterName).join();
+        Assert.assertEquals(getNewClusterData, newClusterData);
         pulsarKeeper.getCluster().delete(clusterName).join();
         Set<String> clusters = pulsarKeeper.getCluster().list().join();
         Assert.assertFalse(clusters.contains(clusterName));

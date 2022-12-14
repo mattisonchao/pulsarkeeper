@@ -47,6 +47,12 @@ public class PulsarAdminTest extends MockedPulsarServiceBaseTest {
         admin.clusters().createClusterAsync(clusterName, clusterData).join();
         ClusterData getClusterData = admin.clusters().getClusterAsync(clusterName).join();
         Assert.assertEquals(getClusterData, clusterData);
+        ClusterDataImpl newClusterData = ClusterDataImpl.builder()
+                .brokerServiceUrl("pulsar://127.0.0.1:6651")
+                .build();
+        admin.clusters().updateClusterAsync(clusterName, newClusterData).join();
+        ClusterData getNewClusterData = admin.clusters().getClusterAsync(clusterName).join();
+        Assert.assertEquals(getNewClusterData, newClusterData);
         admin.clusters().deleteClusterAsync(clusterName).join();
         List<String> clusters = admin.clusters().getClustersAsync().join();
         Assert.assertFalse(clusters.contains(clusterName));
