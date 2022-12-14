@@ -11,4 +11,5 @@ public interface ClusterHandler {
     void create(RoutingContext ctx);
     void update(RoutingContext ctx);
     void delete(RoutingContext ctx);
+    void listFailureDomain(RoutingContext ctx);
 }

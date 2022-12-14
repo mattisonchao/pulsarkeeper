@@ -5,10 +5,12 @@ import io.github.pulsarkeeper.client.PulsarKeeper;
 import io.github.pulsarkeeper.client.exception.PulsarKeeperClusterException;
 import io.github.pulsarkeeper.client.options.PulsarKeeperOptions;
 import io.github.pulsarkeeper.server.base.MockedPulsarServiceBaseTest;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.apache.pulsar.common.policies.data.ClusterData;
 import org.apache.pulsar.common.policies.data.ClusterDataImpl;
+import org.apache.pulsar.common.policies.data.FailureDomain;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -24,7 +26,7 @@ public class PulsarKeeperTest extends MockedPulsarServiceBaseTest {
         internalSetup();
         setupDefaultTenantAndNamespace();
         this.pulsarKeeper = PulsarKeeper.create(PulsarKeeperOptions.builder()
-                        .port(pulsarKeeperPort).build());
+                .port(pulsarKeeperPort).build());
     }
 
     @Override
@@ -144,4 +146,10 @@ public class PulsarKeeperTest extends MockedPulsarServiceBaseTest {
         }
     }
 
+    @Test(priority = 1)
+    public void listFailureDomains() {
+        Map<String, FailureDomain> failureDomains =
+                pulsarKeeper.getCluster().listFailureDomains(CONFIG_CLUSTER_NAME).join();
+        Assert.assertEquals(failureDomains.size(), 0);
+    }
 }

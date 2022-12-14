@@ -8,9 +8,11 @@ import io.github.pulsarkeeper.cli.Args;
 import io.github.pulsarkeeper.client.Cluster;
 import io.github.pulsarkeeper.common.json.ObjectMapperFactory;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Set;
 import lombok.SneakyThrows;
 import org.apache.pulsar.common.policies.data.ClusterDataImpl;
+import org.apache.pulsar.common.policies.data.FailureDomain;
 
 
 @Parameters(commandDescription = "pulsar cluster operation")
@@ -26,6 +28,7 @@ public class CommandCluster extends CommandBase {
                 .addCommand("create", new Create())
                 .addCommand("update", new Update())
                 .addCommand("delete", new Delete())
+                .addCommand("list-failure-domains", new ListFailureDomain())
                 .build();
         try {
             commander.parse(args);
@@ -134,6 +137,32 @@ public class CommandCluster extends CommandBase {
             cluster.delete(clusterName).join();
             println("");
             ok();
+        }
+    }
+
+    @Parameters(commandDescription = "List of failure domain")
+    private static class ListFailureDomain extends CommandBase {
+
+        @Parameter(names = {"-cn", "--cluster-name"}, description = "cluster name")
+        private String clusterName;
+
+        @SneakyThrows
+        @Override
+        public void exec() {
+            Cluster cluster = getClient().getCluster();
+            if (clusterName == null) {
+                Set<String> clusters = cluster.list().join();
+                String selectedCluster = fzf.select(new ArrayList<>(clusters));
+                Map<String, FailureDomain> failureDomains = cluster.listFailureDomains(selectedCluster).join();
+                if (failureDomains.isEmpty()) {
+                    println("nil");
+                } else {
+                    println(failureDomains);
+                }
+                return;
+            }
+            Map<String, FailureDomain> failureDomains = cluster.listFailureDomains(clusterName).join();
+            println(failureDomains);
         }
     }
 }

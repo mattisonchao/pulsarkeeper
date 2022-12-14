@@ -18,7 +18,6 @@ import static org.apache.pulsar.metadata.api.MetadataStoreException.NotFoundExce
 import io.github.pulsarkeeper.broker.handler.ClusterHandler;
 import io.github.pulsarkeeper.broker.service.ClusterService;
 import io.vertx.ext.web.RoutingContext;
-import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.concurrent.ThreadSafe;
 import lombok.extern.slf4j.Slf4j;
@@ -41,11 +40,6 @@ public class ClusterHandlerImpl implements ClusterHandler {
                 .thenAccept(clusters -> ok(ctx, clusters))
                 .exceptionally(ex -> {
                     log.error("[{}][{}] Failed to get list of cluster.", remoteAddress(ctx), role(ctx), ex);
-                    Throwable realCause = unwrap(ex);
-                    if (realCause instanceof NotFoundException) {
-                        ok(ctx, Collections.emptySet());
-                        return null;
-                    }
                     ctx.fail(ex);
                     return null;
                 });
@@ -159,4 +153,15 @@ public class ClusterHandlerImpl implements ClusterHandler {
                 });
     }
 
+    @Override
+    public void listFailureDomain(RoutingContext ctx) {
+        String clusterName = ctx.pathParam("name");
+        clusterService.listFailureDomains(clusterName)
+                .thenAccept(failureDomains -> ok(ctx, failureDomains))
+                .exceptionally(ex -> {
+                    log.error("[{}][{}] Failed to get list of failure domain.", remoteAddress(ctx), role(ctx), ex);
+                    ctx.fail(ex);
+                    return null;
+                });
+    }
 }

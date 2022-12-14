@@ -77,13 +77,28 @@ public class PulsarKeeperServer extends AbstractVerticle {
         router.delete("/api/v1/cluster/:name")
                 .handler(authorizationHandler::superUserPermission)
                 .handler(clusterHandler::delete);
+        router.get("/api/v1/cluster/:name/domain/failure")
+                .handler(authorizationHandler::superUserPermission)
+                .handler(clusterHandler::listFailureDomain);
     }
 
     private void loadPulsarAdminClusterEndpoint(Router router) {
-        router.get("/admin/v2/clusters").handler(clusterHandler::list);
-        router.get("/admin/v2/clusters/:name").handler(clusterHandler::get);
-        router.put("/admin/v2/clusters/:name").handler(clusterHandler::create);
-        router.post("/admin/v2/clusters/:name").handler(clusterHandler::update);
-        router.delete("/admin/v2/clusters/:name").handler(clusterHandler::delete);
+        router.get("/admin/v2/clusters")
+                .handler(clusterHandler::list);
+        router.get("/admin/v2/clusters/:name")
+                .handler(authorizationHandler::superUserPermission)
+                .handler(clusterHandler::get);
+        router.put("/admin/v2/clusters/:name")
+                .handler(authorizationHandler::superUserPermission)
+                .handler(clusterHandler::create);
+        router.post("/admin/v2/clusters/:name")
+                .handler(authorizationHandler::superUserPermission)
+                .handler(clusterHandler::update);
+        router.delete("/admin/v2/clusters/:name")
+                .handler(authorizationHandler::superUserPermission)
+                .handler(clusterHandler::delete);
+        router.get("/admin/v2/clusters/:name/failureDomains")
+                .handler(authorizationHandler::superUserPermission)
+                .handler(clusterHandler::listFailureDomain);
     }
 }

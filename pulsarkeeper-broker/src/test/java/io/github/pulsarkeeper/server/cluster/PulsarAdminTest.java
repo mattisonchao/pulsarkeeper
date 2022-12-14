@@ -2,10 +2,12 @@ package io.github.pulsarkeeper.server.cluster;
 
 import io.github.pulsarkeeper.server.base.MockedPulsarServiceBaseTest;
 import java.util.List;
+import java.util.Map;
 import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.common.policies.data.ClusterData;
 import org.apache.pulsar.common.policies.data.ClusterDataImpl;
+import org.apache.pulsar.common.policies.data.FailureDomain;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -56,5 +58,11 @@ public class PulsarAdminTest extends MockedPulsarServiceBaseTest {
         admin.clusters().deleteClusterAsync(clusterName).join();
         List<String> clusters = admin.clusters().getClustersAsync().join();
         Assert.assertFalse(clusters.contains(clusterName));
+    }
+
+    @Test(priority = 1)
+    public void listFailureDomains() {
+        Map<String, FailureDomain> failureDomains = admin.clusters().getFailureDomainsAsync(CONFIG_CLUSTER_NAME).join();
+        Assert.assertEquals(failureDomains.size(), 0);
     }
 }
