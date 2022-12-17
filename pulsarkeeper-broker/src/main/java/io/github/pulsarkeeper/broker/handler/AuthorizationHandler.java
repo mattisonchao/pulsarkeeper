@@ -1,10 +1,12 @@
 package io.github.pulsarkeeper.broker.handler;
 
 import io.vertx.ext.web.RoutingContext;
+import javax.annotation.concurrent.ThreadSafe;
 import org.apache.pulsar.common.policies.data.NamespaceOperation;
 import org.apache.pulsar.common.policies.data.TenantOperation;
 import org.apache.pulsar.common.policies.data.TopicOperation;
 
+@ThreadSafe
 public interface AuthorizationHandler {
 
     void superUserPermission(RoutingContext ctx);

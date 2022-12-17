@@ -33,8 +33,8 @@ public class Clusters {
                 .send()
                 .onSuccess(event -> {
                     if (event.statusCode() != HttpResponseStatus.OK.code()) {
-                        throw new PulsarKeeperException.UnexpectedHttpCodeException(
-                                HttpResponseStatus.OK.code(), event.statusCode());
+                        future.completeExceptionally(new PulsarKeeperException.UnexpectedHttpCodeException(
+                                HttpResponseStatus.OK.code(), event.statusCode()));
                     }
                     try {
                         Set<String> clusters = getThreadLocal().readValue(event.bodyAsString(),
@@ -160,8 +160,8 @@ public class Clusters {
                 .send()
                 .onSuccess(event -> {
                     if (event.statusCode() != HttpResponseStatus.OK.code()) {
-                        throw new PulsarKeeperException.UnexpectedHttpCodeException(
-                                HttpResponseStatus.OK.code(), event.statusCode());
+                        future.completeExceptionally(new PulsarKeeperException.UnexpectedHttpCodeException(
+                                HttpResponseStatus.OK.code(), event.statusCode()));
                     }
                     try {
                         Map<String, FailureDomain> failureDomains = getThreadLocal().readValue(event.bodyAsString(),

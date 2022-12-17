@@ -4,5 +4,4 @@ include(
         "pulsarkeeper-broker",
         "pulsarkeeper-client-java",
         "pulsarkeeper-cli",
-        "pulsarkeeper-dashboard",
 )

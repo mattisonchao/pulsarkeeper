@@ -19,6 +19,7 @@ import io.github.pulsarkeeper.broker.handler.ClusterHandler;
 import io.github.pulsarkeeper.broker.service.ClusterService;
 import io.vertx.ext.web.RoutingContext;
 import java.util.concurrent.CompletableFuture;
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pulsar.common.policies.data.ClusterData;
@@ -35,7 +36,7 @@ public class ClusterHandlerImpl implements ClusterHandler {
     }
 
     @Override
-    public void list(RoutingContext ctx) {
+    public void list(@Nonnull RoutingContext ctx) {
         clusterService.list()
                 .thenAccept(clusters -> ok(ctx, clusters))
                 .exceptionally(ex -> {
@@ -46,7 +47,7 @@ public class ClusterHandlerImpl implements ClusterHandler {
     }
 
     @Override
-    public void get(RoutingContext ctx) {
+    public void get(@Nonnull RoutingContext ctx) {
         String clusterName = ctx.pathParam("name");
         clusterService.get(clusterName)
                 .thenAccept(clusterDataOpt -> {
@@ -65,7 +66,7 @@ public class ClusterHandlerImpl implements ClusterHandler {
     }
 
     @Override
-    public void create(RoutingContext ctx) {
+    public void create(@Nonnull RoutingContext ctx) {
         String clusterName = ctx.pathParam("name");
         ClusterDataImpl clusterData = ctx.body().asPojo(ClusterDataImpl.class);
         if (!checkClusterName(clusterName) || !checkClusterData(clusterData)) {
@@ -101,7 +102,7 @@ public class ClusterHandlerImpl implements ClusterHandler {
     }
 
     @Override
-    public void update(RoutingContext ctx) {
+    public void update(@Nonnull RoutingContext ctx) {
         String clusterName = ctx.pathParam("name");
         ClusterDataImpl clusterData = ctx.body().asPojo(ClusterDataImpl.class);
         if (!checkClusterName(clusterName) || !checkClusterData(clusterData)) {
@@ -130,7 +131,7 @@ public class ClusterHandlerImpl implements ClusterHandler {
     }
 
     @Override
-    public void delete(RoutingContext ctx) {
+    public void delete(@Nonnull RoutingContext ctx) {
         String clusterName = ctx.pathParam("name");
         clusterService.delete(clusterName)
                 .thenAccept(__ -> {
@@ -154,8 +155,8 @@ public class ClusterHandlerImpl implements ClusterHandler {
     }
 
     @Override
-    public void listFailureDomain(RoutingContext ctx) {
-        String clusterName = ctx.pathParam("name");
+    public void listFailureDomains(@Nonnull RoutingContext ctx) {
+        String clusterName = ctx.pathParam("clusterName");
         clusterService.listFailureDomains(clusterName)
                 .thenAccept(failureDomains -> ok(ctx, failureDomains))
                 .exceptionally(ex -> {
@@ -163,5 +164,20 @@ public class ClusterHandlerImpl implements ClusterHandler {
                     ctx.fail(ex);
                     return null;
                 });
+    }
+
+    @Override
+    public void getFailureDomain(@Nonnull RoutingContext ctx) {
+
+    }
+
+    @Override
+    public void setFailureDomain(@Nonnull RoutingContext ctx) {
+
+    }
+
+    @Override
+    public void deleteFailureDomain(@Nonnull RoutingContext ctx) {
+
     }
 }
