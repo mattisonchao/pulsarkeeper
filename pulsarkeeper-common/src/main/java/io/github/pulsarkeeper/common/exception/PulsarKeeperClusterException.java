@@ -1,4 +1,4 @@
-package io.github.pulsarkeeper.client.exception;
+package io.github.pulsarkeeper.common.exception;
 
 public class PulsarKeeperClusterException extends PulsarKeeperException {
     public PulsarKeeperClusterException() {
@@ -40,5 +40,26 @@ public class PulsarKeeperClusterException extends PulsarKeeperException {
         }
     }
 
+    public static class FailureDomainNotFoundException extends PulsarKeeperClusterException {
+        public FailureDomainNotFoundException(String clusterName, String domainName) {
+            super(String.format("cluster %s failure domain %s not found.", clusterName, domainName));
+        }
+    }
 
+    public static class FailureDomainConflictException extends PulsarKeeperClusterException {
+
+        public FailureDomainConflictException(String message) {
+            super(message);
+        }
+
+        public FailureDomainConflictException(String domain, String broker) {
+            super(String.format("cluster failure domain %s already has broker %s.", domain, broker));
+        }
+    }
+
+    public static class LeaderBrokerNotFoundException extends PulsarKeeperClusterException {
+        public LeaderBrokerNotFoundException(String clusterName) {
+            super(String.format("cluster %s leader broker not found.", clusterName));
+        }
+    }
 }

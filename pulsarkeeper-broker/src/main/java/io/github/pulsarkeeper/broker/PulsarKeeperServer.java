@@ -4,12 +4,15 @@ import io.github.pulsarkeeper.broker.handler.AuthenticationHandler;
 import io.github.pulsarkeeper.broker.handler.AuthorizationHandler;
 import io.github.pulsarkeeper.broker.handler.ClusterHandler;
 import io.github.pulsarkeeper.broker.handler.ClusterPoliciesHandler;
+import io.github.pulsarkeeper.broker.handler.LookupHandler;
 import io.github.pulsarkeeper.broker.handler.impl.AuthenticationDisabledHandler;
 import io.github.pulsarkeeper.broker.handler.impl.AuthorizationDisabledHandler;
 import io.github.pulsarkeeper.broker.handler.impl.ClusterHandlerImpl;
 import io.github.pulsarkeeper.broker.handler.impl.ClusterPoliciesHandlerImpl;
+import io.github.pulsarkeeper.broker.handler.impl.LookupHandlerImpl;
 import io.github.pulsarkeeper.broker.options.PulsarKeeperServerOptions;
 import io.github.pulsarkeeper.broker.service.impl.ClusterServiceImpl;
+import io.github.pulsarkeeper.broker.service.impl.LookupServiceImpl;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Context;
 import io.vertx.core.Promise;
@@ -17,8 +20,12 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.pulsar.broker.PulsarService;
+import org.apache.pulsar.broker.loadbalance.LeaderElectionService;
+import org.apache.pulsar.broker.loadbalance.LoadManager;
 import org.apache.pulsar.broker.resources.PulsarResources;
 import org.apache.pulsar.broker.service.BrokerService;
 
@@ -29,6 +36,7 @@ public class PulsarKeeperServer extends AbstractVerticle {
     private final PulsarKeeperServerOptions options;
     private ClusterHandler clusterHandler;
     private ClusterPoliciesHandler clusterPoliciesHandler;
+    private LookupHandler lookupHandler;
     private AuthorizationHandler authorizationHandler;
     private AuthenticationHandler authenticationHandler;
 
@@ -41,13 +49,19 @@ public class PulsarKeeperServer extends AbstractVerticle {
     @Override
     public void init(Vertx vertx, Context context) {
         super.init(vertx, context);
-        PulsarResources pulsarResources = brokerService.getPulsar().getPulsarResources();
+        PulsarService pulsar = brokerService.getPulsar();
+        PulsarResources pulsarResources = pulsar.getPulsarResources();
+        AtomicReference<LoadManager> loadManager = pulsar.getLoadManager();
+        LeaderElectionService leaderElectionService = pulsar.getLeaderElectionService();
         ClusterServiceImpl clusterService =
-                new ClusterServiceImpl(vertx.nettyEventLoopGroup(), pulsarResources.getClusterResources());
+                new ClusterServiceImpl(vertx.nettyEventLoopGroup(), pulsarResources.getClusterResources(), loadManager,
+                        leaderElectionService);
+        LookupServiceImpl lookupService = new LookupServiceImpl(clusterService);
         this.clusterHandler = new ClusterHandlerImpl(clusterService);
         this.clusterPoliciesHandler = new ClusterPoliciesHandlerImpl(clusterService);
         this.authorizationHandler = new AuthorizationDisabledHandler();
         this.authenticationHandler = new AuthenticationDisabledHandler();
+        this.lookupHandler = new LookupHandlerImpl(lookupService, pulsar.getConfig());
     }
 
     @Override
@@ -177,17 +191,21 @@ public class PulsarKeeperServer extends AbstractVerticle {
                 .handler(clusterHandler::getFailureDomain);
         router.post("/api/v1/clusters/:clusterName/domains/failure/:domainName")
                 .handler(authorizationHandler::superUserPermission)
-                .handler(clusterHandler::setFailureDomain);
+                .handler(clusterHandler::createFailureDomain);
         router.patch("/api/v1/clusters/:clusterName/domains/failure/:domainName")
                 .handler(authorizationHandler::superUserPermission)
-                .handler(clusterHandler::setFailureDomain);
+                .handler(clusterHandler::updateFailureDomain);
         router.delete("/api/v1/clusters/:clusterName/domains/failure/:domainName")
                 .handler(authorizationHandler::superUserPermission)
                 .handler(clusterHandler::deleteFailureDomain);
         router.get("/api/v1/clusters/:clusterName/brokers/active")
-                .handler(authorizationHandler::superUserPermission);
+                .handler(authorizationHandler::superUserPermission)
+                .handler(lookupHandler::redirectToClusterOwner)
+                .handler(clusterHandler::listActiveBrokers);
         router.get("/api/v1/clusters/:clusterName/brokers/leader")
-                .handler(authorizationHandler::superUserPermission);
+                .handler(authorizationHandler::superUserPermission)
+                .handler(lookupHandler::redirectToClusterOwner)
+                .handler(clusterHandler::getLeaderBroker);
     }
 
     private void loadPulsarAdminClusterEndpoint(Router router) {

@@ -1,4 +1,4 @@
-package io.github.pulsarkeeper.client.exception;
+package io.github.pulsarkeeper.common.exception;
 
 
 public class PulsarKeeperException extends RuntimeException {

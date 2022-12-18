@@ -2,8 +2,8 @@ package io.github.pulsarkeeper.server.cluster;
 
 import io.github.pulsarkeeper.client.Clusters;
 import io.github.pulsarkeeper.client.PulsarKeeper;
-import io.github.pulsarkeeper.client.exception.PulsarKeeperClusterException;
 import io.github.pulsarkeeper.client.options.PulsarKeeperOptions;
+import io.github.pulsarkeeper.common.exception.PulsarKeeperClusterException;
 import io.github.pulsarkeeper.server.base.MockedPulsarServiceBaseTest;
 import java.util.Map;
 import java.util.Set;

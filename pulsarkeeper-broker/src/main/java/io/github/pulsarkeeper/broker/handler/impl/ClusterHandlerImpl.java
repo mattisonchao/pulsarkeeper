@@ -17,13 +17,15 @@ import static org.apache.pulsar.metadata.api.MetadataStoreException.BadVersionEx
 import static org.apache.pulsar.metadata.api.MetadataStoreException.NotFoundException;
 import io.github.pulsarkeeper.broker.handler.ClusterHandler;
 import io.github.pulsarkeeper.broker.service.ClusterService;
+import io.github.pulsarkeeper.common.exception.PulsarKeeperClusterException;
 import io.vertx.ext.web.RoutingContext;
-import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.ThreadSafe;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.pulsar.common.policies.data.BrokerInfo;
 import org.apache.pulsar.common.policies.data.ClusterData;
 import org.apache.pulsar.common.policies.data.ClusterDataImpl;
+import org.apache.pulsar.common.policies.data.FailureDomainImpl;
 
 
 @Slf4j
@@ -73,18 +75,11 @@ public class ClusterHandlerImpl implements ClusterHandler {
             badRequest(ctx);
             return;
         }
-        clusterService.get(clusterName)
-                .thenCompose(clusterDataOpt -> {
-                    if (clusterDataOpt.isPresent()) {
-                        unprocessableEntity(ctx);
-                        return CompletableFuture.completedFuture(null);
-                    }
-                    return clusterService.create(clusterName, clusterData)
-                            .thenAccept(addedClusterData -> {
-                                log.info("[{}][{}] Created cluster {} with data {}.", remoteAddress(ctx), role(ctx),
-                                        clusterName, addedClusterData);
-                                created(ctx, addedClusterData);
-                            });
+        clusterService.create(clusterName, clusterData)
+                .thenAccept(addedClusterData -> {
+                    log.info("[{}][{}] Created cluster {} with data {}.", remoteAddress(ctx), role(ctx),
+                            clusterName, addedClusterData);
+                    created(ctx, addedClusterData);
                 }).exceptionally(ex -> {
                     log.error("[{}][{}] Failed to create cluster {} with cluster data {}.", remoteAddress(ctx),
                             role(ctx), clusterName, clusterData, ex);
@@ -142,10 +137,7 @@ public class ClusterHandlerImpl implements ClusterHandler {
                     log.error("[{}][{}] Failed to delete cluster {}.", remoteAddress(ctx),
                             role(ctx), clusterName, ex);
                     Throwable realCause = unwrap(ex);
-                    if (realCause instanceof BadVersionException) {
-                        conflict(ctx);
-                        return null;
-                    } else if (realCause instanceof NotFoundException) {
+                    if (realCause instanceof NotFoundException) {
                         notFound(ctx);
                         return null;
                     }
@@ -160,7 +152,8 @@ public class ClusterHandlerImpl implements ClusterHandler {
         clusterService.listFailureDomains(clusterName)
                 .thenAccept(failureDomains -> ok(ctx, failureDomains))
                 .exceptionally(ex -> {
-                    log.error("[{}][{}] Failed to get list of failure domain.", remoteAddress(ctx), role(ctx), ex);
+                    log.error("[{}][{}] Failed to get list of cluster {} failure domain.", remoteAddress(ctx),
+                            role(ctx), clusterName, ex);
                     ctx.fail(ex);
                     return null;
                 });
@@ -168,16 +161,134 @@ public class ClusterHandlerImpl implements ClusterHandler {
 
     @Override
     public void getFailureDomain(@Nonnull RoutingContext ctx) {
-
+        String clusterName = ctx.pathParam("clusterName");
+        String domainName = ctx.pathParam("domainName");
+        clusterService.getFailureDomain(clusterName, domainName)
+                .thenAccept(failureDomainOpt -> {
+                    if (failureDomainOpt.isEmpty()) {
+                        noContent(ctx);
+                        return;
+                    }
+                    ok(ctx, failureDomainOpt.get());
+                }).exceptionally(ex -> {
+                    log.error("[{}][{}] Failed to get cluster {} failure domain {}.", remoteAddress(ctx), role(ctx),
+                            clusterName, domainName, ex);
+                    ctx.fail(ex);
+                    return null;
+                });
     }
 
     @Override
-    public void setFailureDomain(@Nonnull RoutingContext ctx) {
+    public void createFailureDomain(@Nonnull RoutingContext ctx) {
+        String clusterName = ctx.pathParam("clusterName");
+        String domainName = ctx.pathParam("domainName");
+        FailureDomainImpl failureDomain = ctx.body().asPojo(FailureDomainImpl.class);
+        clusterService.createFailureDomain(clusterName, domainName, failureDomain)
+                .thenAccept(domain -> {
+                    log.info("[{}][{}] Created cluster {} failure domain {} with data {}.", remoteAddress(ctx),
+                            role(ctx), clusterName, domainName, failureDomain);
+                    ok(ctx, domain);
+                })
+                .exceptionally(ex -> {
+                    log.error("[{}][{}] Failed to get cluster {} failure domain {}.", remoteAddress(ctx), role(ctx),
+                            clusterName, domainName, ex);
+                    Throwable realCause = unwrap(ex);
+                    if (realCause instanceof BadVersionException) {
+                        conflict(ctx);
+                        return null;
+                    } else if (realCause instanceof AlreadyExistsException
+                            || realCause instanceof PulsarKeeperClusterException.FailureDomainConflictException) {
+                        unprocessableEntity(ctx);
+                        return null;
+                    }
+                    ctx.fail(ex);
+                    return null;
+                });
+    }
 
+    @Override
+    public void updateFailureDomain(@Nonnull RoutingContext ctx) {
+        String clusterName = ctx.pathParam("clusterName");
+        String domainName = ctx.pathParam("domainName");
+        FailureDomainImpl failureDomain = ctx.body().asPojo(FailureDomainImpl.class);
+        clusterService.updateFailureDomain(clusterName, domainName, failureDomain)
+                .thenAccept(updatedFailureDomain -> {
+                    log.info("[{}][{}] Updated cluster {} failure domain {} with data {}.", remoteAddress(ctx),
+                            role(ctx), clusterName, domainName, failureDomain);
+                    ok(ctx, updatedFailureDomain);
+                })
+                .exceptionally(ex -> {
+                    log.error("[{}][{}] Failed to update cluster {} failure domain {}.", remoteAddress(ctx), role(ctx),
+                            clusterName, domainName, ex);
+                    Throwable realCause = unwrap(ex);
+                    if (realCause instanceof BadVersionException) {
+                        conflict(ctx);
+                        return null;
+                    } else if (realCause instanceof NotFoundException) {
+                        notFound(ctx);
+                        return null;
+                    } else if (realCause instanceof PulsarKeeperClusterException.FailureDomainConflictException) {
+                        unprocessableEntity(ctx);
+                        return null;
+                    }
+                    ctx.fail(ex);
+                    return null;
+                });
     }
 
     @Override
     public void deleteFailureDomain(@Nonnull RoutingContext ctx) {
+        String clusterName = ctx.pathParam("clusterName");
+        String domainName = ctx.pathParam("domainName");
+        clusterService.deleteFailureDomain(clusterName, domainName)
+                .thenAccept(__ -> {
+                    log.info("[{}][{}] Deleted cluster {} failure domain {}.", remoteAddress(ctx), role(ctx),
+                            clusterName, domainName);
+                    noContent(ctx);
+                }).exceptionally(ex -> {
+                    log.error("[{}][{}] Failed to update cluster {} failure domain {}.", remoteAddress(ctx), role(ctx),
+                            clusterName, domainName, ex);
+                    Throwable realCause = unwrap(ex);
+                    if (realCause instanceof NotFoundException) {
+                        notFound(ctx);
+                        return null;
+                    }
+                    ctx.fail(ex);
+                    return null;
+                });
+    }
+
+    @Override
+    public void listActiveBrokers(@Nonnull RoutingContext ctx) {
+        String clusterName = ctx.pathParam("clusterName");
+        clusterService.listActiveBrokers()
+                .thenAccept(brokers -> ok(ctx, brokers))
+                .exceptionally(ex -> {
+                    log.error("[{}][{}] Failed to get list of cluster {} active brokers.", remoteAddress(ctx),
+                            role(ctx), clusterName, ex);
+                    ctx.fail(ex);
+                    return null;
+                });
+    }
+
+    @Override
+    public void getLeaderBroker(@Nonnull RoutingContext ctx) {
+        String clusterName = ctx.pathParam("clusterName");
+        clusterService.getLeaderBroker()
+                .thenAccept(leaderInfoOpt -> {
+                    if (leaderInfoOpt.isEmpty()) {
+                        notFound(ctx);
+                        return;
+                    }
+                    BrokerInfo brokerInfo = leaderInfoOpt.get();
+                    ok(ctx, brokerInfo);
+                })
+                .exceptionally(ex -> {
+                    log.error("[{}][{}] Failed to get leader broker info of cluster {}.", remoteAddress(ctx),
+                            role(ctx), clusterName, ex);
+                    ctx.fail(ex);
+                    return null;
+                });
 
     }
 }
