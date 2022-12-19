@@ -38,6 +38,7 @@ public class Clusters {
                     if (event.statusCode() != HttpResponseStatus.OK.code()) {
                         future.completeExceptionally(new PulsarKeeperException.UnexpectedHttpCodeException(
                                 HttpResponseStatus.OK.code(), event.statusCode()));
+                        return;
                     }
                     try {
                         Set<String> clusters = getThreadLocal().readValue(event.bodyAsString(),
@@ -165,6 +166,7 @@ public class Clusters {
                     if (event.statusCode() != HttpResponseStatus.OK.code()) {
                         future.completeExceptionally(new PulsarKeeperException.UnexpectedHttpCodeException(
                                 HttpResponseStatus.OK.code(), event.statusCode()));
+                        return;
                     }
                     try {
                         Map<String, FailureDomain> failureDomains = getThreadLocal().readValue(event.bodyAsString(),
@@ -194,12 +196,35 @@ public class Clusters {
                             future.completeExceptionally(
                                     new PulsarKeeperClusterException.FailureDomainConflictException(
                                             "cluster failure domain already exists or"
-                                                    + " broker conflicts with other clusters."));
+                                                    + " brokers conflicts with other clusters."));
                             break;
                         case 409:
                             future.completeExceptionally(
                                     new PulsarKeeperException.OperationConflictException(
                                             "CREATE CLUSTER FAILURE DOMAIN"));
+                            break;
+                        default:
+                            future.completeExceptionally(new PulsarKeeperException.UnexpectedHttpCodeException(
+                                    HttpResponseStatus.CREATED.code(), event.statusCode()));
+                    }
+                }).onFailure(future::completeExceptionally);
+        return future;
+    }
+
+    public CompletableFuture<FailureDomain> getFailureDomain(@Nonnull String clusterName, @Nonnull String domainName) {
+        CompletableFuture<FailureDomain> future = new CompletableFuture<>();
+        client.get(options.getPort(), options.getHost(),
+                        "/api/v1/clusters/" + clusterName + "/domains/failure/" + domainName)
+                .send()
+                .onSuccess(event -> {
+                    switch (event.statusCode()) {
+                        case 200:
+                            future.complete(event.bodyAsJson(FailureDomainImpl.class));
+                            break;
+                        case 404:
+                            future.completeExceptionally(
+                                    new PulsarKeeperClusterException.FailureDomainNotFoundException(clusterName,
+                                            domainName));
                             break;
                         default:
                             future.completeExceptionally(new PulsarKeeperException.UnexpectedHttpCodeException(
@@ -229,8 +254,7 @@ public class Clusters {
                         case 422:
                             future.completeExceptionally(
                                     new PulsarKeeperClusterException.FailureDomainConflictException(
-                                            "cluster failure domain already exists or"
-                                                    + " broker conflicts with other clusters."));
+                                            "cluster failure domain brokers conflicts with other clusters."));
                             break;
                         case 409:
                             future.completeExceptionally(
@@ -263,7 +287,7 @@ public class Clusters {
                             break;
                         default:
                             future.completeExceptionally(new PulsarKeeperException.UnexpectedHttpCodeException(
-                                    HttpResponseStatus.OK.code(), event.statusCode()));
+                                    HttpResponseStatus.NO_CONTENT.code(), event.statusCode()));
                     }
                 }).onFailure(future::completeExceptionally);
         return future;

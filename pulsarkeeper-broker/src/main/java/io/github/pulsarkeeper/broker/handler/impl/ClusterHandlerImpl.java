@@ -166,7 +166,7 @@ public class ClusterHandlerImpl implements ClusterHandler {
         clusterService.getFailureDomain(clusterName, domainName)
                 .thenAccept(failureDomainOpt -> {
                     if (failureDomainOpt.isEmpty()) {
-                        noContent(ctx);
+                        notFound(ctx);
                         return;
                     }
                     ok(ctx, failureDomainOpt.get());
@@ -187,7 +187,7 @@ public class ClusterHandlerImpl implements ClusterHandler {
                 .thenAccept(domain -> {
                     log.info("[{}][{}] Created cluster {} failure domain {} with data {}.", remoteAddress(ctx),
                             role(ctx), clusterName, domainName, failureDomain);
-                    ok(ctx, domain);
+                    created(ctx, domain);
                 })
                 .exceptionally(ex -> {
                     log.error("[{}][{}] Failed to get cluster {} failure domain {}.", remoteAddress(ctx), role(ctx),

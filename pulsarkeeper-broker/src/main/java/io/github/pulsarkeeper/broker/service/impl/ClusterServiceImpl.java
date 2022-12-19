@@ -119,7 +119,7 @@ public class ClusterServiceImpl extends AbstractThreadPickService implements Clu
     public CompletableFuture<FailureDomain> createFailureDomain(@Nonnull String clusterName, @Nonnull String domainName,
                                                                 @Nonnull FailureDomainImpl failureDomain) {
         final CompletableFuture<Void> future;
-        if (Collections.isEmpty(failureDomain.getBrokers())) {
+        if (!Collections.isEmpty(failureDomain.getBrokers())) {
             future = checkBrokerExclusiveConflict(clusterName, failureDomain, null);
         } else {
             future = CompletableFuture.completedFuture(null);
